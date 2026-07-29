@@ -1,0 +1,14 @@
+
+CADASTRO DE CLIENTE
+
+Nome: João Silva Santos
+CPF: 123.456.789-00
+Data de Nascimento: 15/03/1985
+Endereço: Rua das Flores, 123
+Cidade: São Paulo
+Estado: SP
+CEP: 01234-567
+Telefone: (11) 98765-4321
+Email: joao.silva@email.com
+Profissão: Engenheiro de Software
+Renda Mensal: 15000.00

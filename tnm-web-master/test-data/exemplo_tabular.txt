@@ -1,0 +1,11 @@
+
+RELATÓRIO DE VENDAS - JANEIRO 2024
+
+Produto              Quantidade    Valor Unit    Total
+Notebook Dell        15            3500.00       52500.00
+Mouse Logitech       50            45.90         2295.00
+Teclado Mecânico     30            280.00        8400.00
+Monitor LG 27"       20            1200.00       24000.00
+Webcam HD            25            150.00        3750.00
+
+Total Geral: R$ 90.945,00

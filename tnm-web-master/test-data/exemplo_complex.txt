@@ -1,0 +1,17 @@
+
+INVENTÁRIO DE ESTOQUE - FILIAL SUL
+
+Código    Descrição              Categoria      Qtd    Valor    Fornecedor
+PRD001    Notebook Dell XPS      Eletrônicos    45     4500     Dell Brasil
+PRD002    Mouse Wireless         Acessórios     120    89       Logitech
+PRD003    Teclado Mecânico RGB   Periféricos    68     450      Razer
+PRD004    Monitor 4K 32"         Displays       28     2800     LG
+PRD005    Webcam Full HD         Vídeo          95     280      Microsoft
+PRD006    Headset Gamer          Áudio          110    320      HyperX
+PRD007    SSD 1TB NVMe           Storage        200    580      Samsung
+PRD008    RAM 16GB DDR4          Memória        150    420      Kingston
+
+Observações:
+- Produtos PRD001 e PRD004 necessitam reposição
+- Fornecedor Razer com entrega prevista para 15/08
+- Promoção ativa em itens da categoria Áudio

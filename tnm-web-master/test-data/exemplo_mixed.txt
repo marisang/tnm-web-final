@@ -1,0 +1,23 @@
+
+RELATÓRIO FINANCEIRO - Q1 2024
+
+Cliente: Empresa XYZ Ltda
+CNPJ: 12.345.678/0001-90
+Período: Janeiro a Março 2024
+
+RECEITAS
+Mês        Vendas       Serviços     Total
+Janeiro    150000.00    45000.00     195000.00
+Fevereiro  165000.00    52000.00     217000.00
+Março      180000.00    48000.00     228000.00
+
+DESPESAS
+Categoria           Valor
+Salários            120000.00
+Aluguel            15000.00
+Fornecedores       85000.00
+Marketing          25000.00
+Outros             10000.00
+
+Resultado: R$ 385.000,00
+Margem: 60.3%
