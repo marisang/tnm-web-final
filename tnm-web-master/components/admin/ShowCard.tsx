@@ -1,5 +1,7 @@
 'use client';
 
+export type Prioridade = 'alta' | 'media' | 'baixa';
+
 interface ShowCardProps {
   show: {
     id: string;
@@ -10,15 +12,35 @@ interface ShowCardProps {
     time: string;
     location: string;
   };
+  prioridade: Prioridade;
+  onPrioridadeChange: (prioridade: Prioridade) => void;
   onApprove: () => void;
   onReject: () => void;
   loading?: boolean;
 }
 
-export default function ShowCard({ show, onApprove, onReject, loading }: ShowCardProps) {
+const PRIORIDADE_LABELS: Record<Prioridade, string> = {
+  alta: 'Alta',
+  media: 'Média',
+  baixa: 'Baixa',
+};
+
+const PRIORIDADE_CORES: Record<Prioridade, string> = {
+  alta: 'text-red-400',
+  media: 'text-yellow-400',
+  baixa: 'text-green-400',
+};
+
+export default function ShowCard({
+  show,
+  prioridade,
+  onPrioridadeChange,
+  onApprove,
+  onReject,
+  loading,
+}: ShowCardProps) {
   return (
     <div className="bg-purple-900 rounded p-3 flex items-center gap-3 border-2 border-purple-800">
-      {/* Banner */}
       {show.bannerUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -35,7 +57,6 @@ export default function ShowCard({ show, onApprove, onReject, loading }: ShowCar
         </div>
       )}
 
-      {/* Show Info */}
       <div className="flex-1 min-w-0">
         <h3 className="text-yellow-400 text-sm font-bold">{show.title}</h3>
         <div className="space-y-0.5 text-purple-200 text-xs">
@@ -48,9 +69,24 @@ export default function ShowCard({ show, onApprove, onReject, loading }: ShowCar
             <span>{show.location}</span>
           </div>
         </div>
+
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-purple-300 text-xs">Prioridade:</span>
+          <select
+            value={prioridade}
+            onChange={(e) => onPrioridadeChange(e.target.value as Prioridade)}
+            disabled={loading}
+            className={`bg-purple-800 border border-purple-600 rounded px-2 py-0.5 text-xs font-semibold disabled:opacity-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-purple-400 ${PRIORIDADE_CORES[prioridade]}`}
+          >
+            {(Object.keys(PRIORIDADE_LABELS) as Prioridade[]).map((p) => (
+              <option key={p} value={p} className="text-white bg-purple-900">
+                {PRIORIDADE_LABELS[p]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex gap-2 flex-shrink-0">
         <button
           onClick={onApprove}

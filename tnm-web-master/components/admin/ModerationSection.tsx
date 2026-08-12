@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import ShowCard from './ShowCard';
+import ShowCard, { type Prioridade } from './ShowCard';
 
 interface ShowExibicao {
   id: string;
@@ -40,6 +40,8 @@ export default function ModerationSection() {
   const [erro, setErro] = useState('');
   const [processandoId, setProcessandoId] = useState<string | null>(null);
 
+  const [prioridades, setPrioridades] = useState<Record<string, Prioridade>>({});
+
   const carregarShowsPendentes = useCallback(async () => {
     setCarregando(true);
     setErro('');
@@ -51,7 +53,11 @@ export default function ModerationSection() {
         setCarregando(false);
         return;
       }
-      setShows((json.shows as ShowApi[]).map(paraExibicao));
+      const lista = (json.shows as ShowApi[]).map(paraExibicao);
+      setShows(lista);
+      setPrioridades(
+        Object.fromEntries(lista.map((s) => [s.id, 'media' as Prioridade]))
+      );
     } catch {
       setErro('Não foi possível carregar os shows pendentes de moderação.');
     } finally {
@@ -63,14 +69,23 @@ export default function ModerationSection() {
     carregarShowsPendentes();
   }, [carregarShowsPendentes]);
 
+  function handlePrioridadeChange(id: string, prioridade: Prioridade) {
+    setPrioridades((atual) => ({ ...atual, [id]: prioridade }));
+  }
+
   async function atualizarStatus(id: string, status: 'aprovado' | 'recusado') {
     setProcessandoId(id);
     setErro('');
     try {
+      const body: { status: string; prioridade?: Prioridade } = { status };
+      if (status === 'aprovado') {
+        body.prioridade = prioridades[id] ?? 'media';
+      }
+
       const resp = await fetch(`/api/admin/shows/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       });
       const json = await resp.json();
       if (!resp.ok || !json.success) {
@@ -78,6 +93,11 @@ export default function ModerationSection() {
         return;
       }
       setShows((atual) => atual.filter((show) => show.id !== id));
+      setPrioridades((atual) => {
+        const copia = { ...atual };
+        delete copia[id];
+        return copia;
+      });
     } catch {
       setErro('Não foi possível atualizar o status do show. Tente novamente.');
     } finally {
@@ -101,6 +121,8 @@ export default function ModerationSection() {
             <ShowCard
               key={show.id}
               show={show}
+              prioridade={prioridades[show.id] ?? 'media'}
+              onPrioridadeChange={(p) => handlePrioridadeChange(show.id, p)}
               loading={processandoId === show.id}
               onApprove={() => atualizarStatus(show.id, 'aprovado')}
               onReject={() => atualizarStatus(show.id, 'recusado')}
