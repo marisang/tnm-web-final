@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAppServiceClient } from '@/lib/supabaseAppServer';
 import { SplitRow } from '@/types/splitReconciliation';
 import { findDuplicateSplits } from '@/lib/duplicateDetection';
 
@@ -15,70 +15,56 @@ export interface ConciliacaoData {
 }
 
 /**
- * Monta a lista de obras/fonogramas para a tela de Conciliação e Splits,
- * juntando os dados reais do banco WEB:
- * - `fonogramas` (tem ISRC) + `repasses_fonogramas` (percentual e valor apurado)
- * - `obras` (tem ISWC, sem ISRC) + `repasses_obras` (percentual e valor apurado)
+ * Monta a lista de artistas para a tela de Conciliação,
+ * usando os dados reais do banco APP:
+ * - `artistas` (nome/pseudônimo)
+ * - `transacoes_financeiras` (valor_arrecadado e valor_repasse por artista)
  *
- * ISRCs duplicados são destacados via findDuplicateSplits (lib/duplicateDetection.ts).
+ * O "Valor Repassado" exibido é a soma direta de transacoes_financeiras.valor_repasse
+ * por artista — o mesmo valor que aparece no dashboard do artista.
+ * Não há aplicação de percentuais de split.
  */
 export async function getConciliacaoData(): Promise<ConciliacaoData> {
-  const supabase = await createClient();
+  const supabaseApp = createAppServiceClient();
 
-  const [{ data: fonogramas }, { data: repassesFonogramas }, { data: obras }, { data: repassesObras }] =
-    await Promise.all([
-      supabase.from('fonogramas').select('id, isrc, titulo_principal, percentual_part, obra_id'),
-      supabase.from('repasses_fonogramas').select('id, percentual_part, valor_repasse, fonograma_id'),
-      supabase.from('obras').select('id, iswc, titulo_principal, percentual_cat'),
-      supabase.from('repasses_obras').select('id, percentual_cat, valor_repasse, obra_id'),
-    ]);
+  const [{ data: artistas }, { data: transacoes }] = await Promise.all([
+    supabaseApp.from('artistas').select('id, pseudonimo_artistico, nome_completo'),
+    supabaseApp.from('transacoes_financeiras').select('artista_id, origem_receita, valor_arrecadado, valor_repasse'),
+  ]);
 
-  const listaFonogramas = fonogramas ?? [];
-  const listaRepassesFonogramas = repassesFonogramas ?? [];
-  const listaObras = obras ?? [];
-  const listaRepassesObras = repassesObras ?? [];
+  const listaArtistas = artistas ?? [];
+  const listaTransacoes = transacoes ?? [];
 
-  const repassePorFonograma = new Map(
-    listaRepassesFonogramas.map((r) => [r.fonograma_id, r])
-  );
-  const repassePorObra = new Map(listaRepassesObras.map((r) => [r.obra_id, r]));
+  // Agrupa transações por artista
+  const repassePorArtista = new Map<string, number>();
+  const brutoPoArtista = new Map<string, number>();
 
-  const linhas: SplitRow[] = [];
-
-  // Fonogramas (têm ISRC) — item principal da tela de conciliação.
-  for (const f of listaFonogramas) {
-    const repasse = repassePorFonograma.get(f.id);
-    linhas.push({
-      id: `fonograma-${f.id}`,
-      isrc: f.isrc ?? '',
-      iswc: '',
-      titulo: f.titulo_principal,
-      percentual: repasse?.percentual_part ?? f.percentual_part ?? undefined,
-      valor: repasse?.valor_repasse,
-      origem: 'fonograma',
-    });
+  for (const t of listaTransacoes) {
+    repassePorArtista.set(
+      t.artista_id,
+      (repassePorArtista.get(t.artista_id) ?? 0) + Number(t.valor_repasse || 0)
+    );
+    brutoPoArtista.set(
+      t.artista_id,
+      (brutoPoArtista.get(t.artista_id) ?? 0) + Number(t.valor_arrecadado || 0)
+    );
   }
 
-  // Obras sem fonograma vinculado (apenas ISWC, sem ISRC).
-  const obraIdsComFonograma = new Set(listaFonogramas.map((f) => f.obra_id).filter(Boolean));
-  for (const o of listaObras) {
-    if (obraIdsComFonograma.has(o.id)) continue; // já representada via fonograma acima
-    const repasse = repassePorObra.get(o.id);
-    linhas.push({
-      id: `obra-${o.id}`,
-      isrc: '',
-      iswc: o.iswc ?? '',
-      titulo: o.titulo_principal,
-      percentual: repasse?.percentual_cat ?? o.percentual_cat ?? undefined,
-      valor: repasse?.valor_repasse,
-      origem: 'obra',
-    });
-  }
+  const linhas: SplitRow[] = listaArtistas.map((a) => ({
+    id: `artista-${a.id}`,
+    isrc: '',
+    iswc: '',
+    titulo: a.pseudonimo_artistico || a.nome_completo || '—',
+    percentual: undefined,
+    valor: repassePorArtista.get(a.id),
+    valorBruto: brutoPoArtista.get(a.id),
+    origem: 'artista' as const,
+  }));
 
   const { duplicateRowIds, duplicateIsrcCodes } = findDuplicateSplits(linhas);
 
-  const totalBruto = linhas.reduce((soma, l) => soma + (l.valor ?? 0), 0);
-  const totalRepassado = totalBruto; // valor_repasse já é o total apurado por obra/fonograma
+  const totalBruto = linhas.reduce((soma, l) => soma + (l.valorBruto ?? 0), 0);
+  const totalRepassado = linhas.reduce((soma, l) => soma + (l.valor ?? 0), 0);
 
   return {
     linhas,

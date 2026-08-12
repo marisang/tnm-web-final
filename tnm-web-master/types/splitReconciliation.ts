@@ -7,4 +7,5 @@ export interface SplitRow {
   percentual?: number;
   origem?: string;
   valor?: number;
+  valorBruto?: number;
 }

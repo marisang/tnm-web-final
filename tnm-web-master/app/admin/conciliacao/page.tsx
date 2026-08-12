@@ -6,8 +6,7 @@ function formatCurrency(value: number) {
 }
 
 export default async function ConciliacaoPage() {
-  const { linhas, duplicateRowIds, resumo } = await getConciliacaoData();
-  const duplicadas = new Set(duplicateRowIds);
+  const { linhas, resumo } = await getConciliacaoData();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -20,28 +19,26 @@ export default async function ConciliacaoPage() {
               <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center">
                 <span className="text-white text-xl">💰</span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-800">Conciliação e Splits</h1>
+              <h1 className="text-3xl font-bold text-gray-800">Conciliação</h1>
             </div>
           </div>
 
           {/* Resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-sm text-gray-600 mb-2">Total Apurado (Obras + Fonogramas)</p>
+              <p className="text-sm text-gray-600 mb-2">Total Arrecadado</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(resumo.totalBruto)}</p>
             </div>
             <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-sm text-gray-600 mb-2">ISRCs Duplicados Encontrados</p>
-              <p className="text-2xl font-bold text-red-600">
-                {new Set(linhas.filter((l) => duplicadas.has(l.id) && l.isrc).map((l) => l.isrc)).size}
-              </p>
+              <p className="text-sm text-gray-600 mb-2">Total Repassado aos Artistas</p>
+              <p className="text-2xl font-bold text-purple-600">{formatCurrency(resumo.totalRepassado)}</p>
             </div>
           </div>
 
-          {/* Tabela de Obras/Fonogramas */}
+          {/* Tabela de Artistas */}
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-4 bg-purple-600">
-              <h2 className="text-xl font-bold text-white">Obras e Fonogramas</h2>
+              <h2 className="text-xl font-bold text-white">Repasses por Artista</h2>
             </div>
 
             <div className="overflow-x-auto">
@@ -49,13 +46,10 @@ export default async function ConciliacaoPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Título
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ISRC / ISWC
+                      Artista
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Divisão de Receitas
+                      Valor Arrecadado
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Valor Repassado
@@ -65,35 +59,24 @@ export default async function ConciliacaoPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {linhas.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
-                        Nenhuma obra ou fonograma encontrado. Importe relatórios para popular esta tela.
+                      <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
+                        Nenhum artista encontrado. Verifique se há transações financeiras cadastradas.
                       </td>
                     </tr>
                   ) : (
-                    linhas.map((linha) => {
-                      const isDuplicada = duplicadas.has(linha.id);
-                      return (
-                        <tr key={linha.id} className={isDuplicada ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{linha.titulo || '—'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={isDuplicada ? 'font-semibold text-red-700' : 'text-gray-500'}>
-                              {linha.isrc || linha.iswc || '—'}
-                            </span>
-                            {isDuplicada && (
-                              <span className="ml-2 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800 px-2 py-0.5">
-                                Duplicado
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                            {linha.percentual != null ? `${linha.percentual}%` : '—'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-600 text-right font-semibold">
-                            {linha.valor != null ? formatCurrency(linha.valor) : '—'}
-                          </td>
-                        </tr>
-                      );
-                    })
+                    linhas.map((linha) => (
+                      <tr key={linha.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {linha.titulo || '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
+                          {linha.valorBruto != null ? formatCurrency(linha.valorBruto) : '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-600 text-right font-semibold">
+                          {linha.valor != null ? formatCurrency(linha.valor) : '—'}
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>

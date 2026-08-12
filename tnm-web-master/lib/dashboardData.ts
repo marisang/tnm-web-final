@@ -1,17 +1,11 @@
 import { DashboardMetrics } from '@/types/dashboard';
 import { createClient } from '@/lib/supabase/server';
-import { SPLIT_PERCENTAGES } from '@/lib/splitCalculator';
 
 /**
  * Calcula os indicadores do Dashboard a partir dos dados reais do banco WEB.
  *
- * Regras de negócio aplicadas (ver lib/splitCalculator.ts):
- * - A ONErpm retém SPLIT_PERCENTAGES.oneRpm (30%) do faturamento bruto antes
- *   de repassar o restante. Esse percentual é uma regra de negócio (não vem
- *   de uma coluna do banco), reaproveitada do cálculo já existente no projeto.
- * - O que sobra (70%) é dividido entre TNM e artistas/editoras, e esse
- *   resultado é o que fica registrado, obra a obra, em `repasses_obras` e
- *   `repasses_fonogramas`.
+ * Regras de negócio:
+ * - A ONErpm retém 30% do faturamento bruto antes de repassar o restante.
  * - "Valor Retido pela TNM" = faturamento bruto - parte da ONErpm - soma de
  *   todos os repasses já apurados (o que sobra é a margem da TNM).
  * - "Repasses Pendentes" = soma dos repasses cuja receita de origem ainda
@@ -57,7 +51,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     if (rr.repasse_fonograma_id) repassesPendentes += valorPorRepasseFonograma.get(rr.repasse_fonograma_id) ?? 0;
   }
 
-  const parteONErpm = faturamentoTotalBruto * SPLIT_PERCENTAGES.oneRpm;
+  const parteONErpm = faturamentoTotalBruto * 0.3; // ONErpm retém 30% do bruto
   const valorRetidoTNM = Math.max(faturamentoTotalBruto - parteONErpm - totalRepassado, 0);
 
   return {
